@@ -7,37 +7,11 @@ from bot.utils import Colors
 from bot.notpx import NotPx
 from telethon.sync import TelegramClient
 import telebot
+from datetime import datetime, timedelta
 
 BOT_TOKEN = "7328466816:AAHjGChrI8xGiYz_9f4pK78Ks1x8v5N5ocg"
 
 bot = telebot.TeleBot(BOT_TOKEN)
-
-@bot.message_handler(commands=['start'])
-def send_welcome(message):
-    bot.reply_to(message, "Welcome! You can start using the bot now.")
-
-def multithread_starter():
-    print("Starting the script...")
-    if not os.path.exists("sessions"):
-        os.mkdir("sessions")
-    dirs = os.listdir("sessions/")
-    sessions = list(filter(lambda x: x.endswith(".session"), dirs))
-    sessions = list(map(lambda x: x.split(".session")[0], sessions))
-    
-    for session_name in sessions:
-        try:
-            cli = NotPx("sessions/" + session_name)
-
-            def run_painters():
-                asyncio.run(painters(cli, session_name))
-
-            def run_mine_claimer():
-                asyncio.run(mine_claimer(cli, session_name))
-
-            threading.Thread(target=run_painters).start()
-            threading.Thread(target=run_mine_claimer).start()
-        except Exception as e:
-            print(f"[!] Error loading session '{session_name}', error: {e}")
 
 def add_api_credentials():
     api_id = input("Enter API ID: ")
@@ -46,7 +20,7 @@ def add_api_credentials():
     with open(env_path, "w") as f:
         f.write(f"API_ID={api_id}\n")
         f.write(f"API_HASH={api_hash}\n")
-    print("[+] API credentials saved successfully.")
+    print("[+] API credentials saved successfully in env.txt file.")
 
 def reset_api_credentials():
     env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'env.txt')
@@ -74,6 +48,43 @@ def reset_session():
     except (ValueError, IndexError):
         print("[!] Invalid choice. Please try again.")
 
+def load_api_credentials():
+    env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'env.txt')
+    if os.path.exists(env_path):
+        with open(env_path, 'r') as f:
+            lines = f.readlines()
+            api_id = None
+            api_hash = None
+            for line in lines:
+                if line.startswith('API_ID='):
+                    api_id = line.split('=')[1].strip()
+                elif line.startswith('API_HASH='):
+                    api_hash = line.split('=')[1].strip()
+            return api_id, api_hash
+    return None, None
+
+def multithread_starter():
+    if not os.path.exists("sessions"):
+        os.mkdir("sessions")
+    dirs = os.listdir("sessions/")
+    sessions = list(filter(lambda x: x.endswith(".session"), dirs))
+    sessions = list(map(lambda x: x.split(".session")[0], sessions))
+    
+    for session_name in sessions:
+        try:
+            cli = NotPx("sessions/" + session_name)
+
+            def run_painters():
+                asyncio.run(painters(cli, session_name))
+
+            def run_mine_claimer():
+                asyncio.run(mine_claimer(cli, session_name))
+
+            threading.Thread(target=run_painters).start()
+            threading.Thread(target=run_mine_claimer).start()
+        except Exception as e:
+            print("[!] {}Error on load session{} \"{}\", error: {}".format(Colors.RED, Colors.END, session_name, e))
+
 def process():
     print(r"""{}
 ███████  █████  ██    ██  █████  ███    ██ 
@@ -87,7 +98,7 @@ def process():
     print("Starting Telegram bot...")
     bot_thread = threading.Thread(target=bot.polling, kwargs={"none_stop": True})
     bot_thread.start()
-
+    
     while True:
         print("\nMain Menu:")
         print("1. Add Account session")
@@ -108,11 +119,11 @@ def process():
                 if api_id and api_hash:
                     client = TelegramClient("sessions/" + name, api_id, api_hash).start()
                     client.disconnect()
-                    print(f"[+] Session {name} saved successfully.")
+                    print("[+] Session {} {}saved success{}.".format(name, Colors.GREEN, Colors.END))
                 else:
                     print("[!] API credentials not found. Please add them first.")
             else:
-                print(f"[x] Session {name} already exists.")
+                print("[x] Session {} {}already exist{}.".format(name, Colors.RED, Colors.END))
         elif option == "2":
             multithread_starter()
         elif option == "3":
