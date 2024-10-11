@@ -8,7 +8,7 @@ from bot.notpx import NotPx
 from telethon.sync import TelegramClient
 import telebot
 
-BOT_TOKEN = "7866801642:AAE07AwB-Q7utZ4DVahkUTzLtg_UoduH_yE"
+BOT_TOKEN = "7328466816:AAHjGChrI8xGiYz_9f4pK78Ks1x8v5N5ocg"
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
